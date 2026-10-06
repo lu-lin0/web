@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>手語字典</title>
+
+    <!-- 使用主介面的 CSS -->
+    <link href="style.css" rel="stylesheet" type="text/css">
+
+
+    <style>
+
+        /* =========================
+           搜尋區域
+        ========================= */
+
+        .search-box {
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+            margin-top: 10px;
+            gap: 8px;
+            position: relative;
+        }
+
+
+        .search-box input {
+
+            flex: 1;
+
+            padding: 16px 20px;
+
+            border: none;
+
+            border-radius: 50px;
+
+            font-size: 16px;
+
+            outline: none;
+
+            background-color: #ffffff;
+
+            color: #000000;
+
+            box-sizing: border-box;
+        }
+
+
+        .search-box button {
+
+            padding: 16px 20px;
+
+            border: none;
+
+            border-radius: 50px;
+
+            background: var(--primary-gradient);
+
+            color: #ffffff;
+
+            font-size: 1rem;
+
+            font-weight: bold;
+
+            cursor: pointer;
+
+            white-space: nowrap;
+
+            transition: all 0.3s ease;
+        }
+
+
+        .search-box button:hover {
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 10px 25px rgba(0, 242, 254, 0.4);
+        }
+
+
+
+        /* =========================
+           分類區域
+        ========================= */
+
+        .category-wrapper {
+            position: relative;
+        }
+
+
+
+        /* =========================
+           分類按鈕
+        ========================= */
+
+        .category-button {
+
+            min-width: 100px !important;
+
+            padding: 16px 20px !important;
+
+            border: none !important;
+
+            border-radius: 50px !important;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #11998e,
+                    #38ef7d
+                ) !important;
+
+            background-color:
+                #11998e !important;
+
+            color:
+                #ffffff !important;
+
+            font-size:
+                1rem !important;
+
+            font-weight:
+                bold !important;
+
+            cursor:
+                pointer !important;
+
+            white-space:
+                nowrap;
+
+            transition:
+                all 0.3s ease;
+
+            box-shadow:
+                0 4px 15px
+                rgba(56, 239, 125, 0.3) !important;
+        }
+
+
+        .category-button:hover {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #11998e,
+                    #38ef7d
+                ) !important;
+
+            background-color:
+                #11998e !important;
+
+            color:
+                #ffffff !important;
+
+            transform:
+                translateY(-2px);
+
+            box-shadow:
+                0 8px 20px
+                rgba(56, 239, 125, 0.5) !important;
+        }
+
+
+
+        /* =========================
+           分類下拉選單
+        ========================= */
+
+        .category-menu {
+
+            display: none;
+
+            position: absolute;
+
+            top: 58px;
+
+            right: 0;
+
+            width: 150px;
+
+            min-width: 150px;
+
+            padding: 8px;
+
+            box-sizing: border-box;
+
+            z-index: 1000;
+
+            background:
+                rgba(20, 40, 30, 0.97) !important;
+
+            border:
+                1px solid
+                rgba(56, 239, 125, 0.5) !important;
+
+            border-radius: 15px;
+
+            box-shadow:
+                0 10px 30px
+                rgba(0, 0, 0, 0.3);
+        }
+
+
+        .category-menu.show {
+
+            display: block !important;
+        }
+
+
+
+        /* =========================
+           分類裡面的選項
+        ========================= */
+
+        .category-item {
+
+            display: block !important;
+
+            width: 100% !important;
+
+            min-width: 100% !important;
+
+            box-sizing: border-box;
+
+            padding: 10px;
+
+            margin: 3px 0;
+
+            border: none !important;
+
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #11998e,
+                    #38ef7d
+                ) !important;
+
+            background-color:
+                #11998e !important;
+
+            color:
+                #ffffff !important;
+
+            font-size:
+                15px !important;
+
+            font-weight:
+                normal !important;
+
+            text-align:
+                left;
+
+            cursor:
+                pointer;
+
+            transition:
+                all 0.2s ease;
+        }
+
+
+        .category-item:hover {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #11998e,
+                    #38ef7d
+                ) !important;
+
+            background-color:
+                #11998e !important;
+
+            color:
+                #ffffff !important;
+
+            transform:
+                translateX(3px);
+
+            box-shadow:
+                0 4px 12px
+                rgba(56, 239, 125, 0.5) !important;
+        }
+
+
+
+        /* =========================
+           分類標題
+        ========================= */
+
+        .category-title {
+
+            width: 100%;
+
+            max-width: 500px;
+
+            margin-top: 30px;
+
+            margin-bottom: -15px;
+
+            color: #ffffff;
+
+            font-size: 20px;
+
+            font-weight: bold;
+
+            text-align: left;
+        }
+
+
+
+        /* =========================
+           詞彙列表
+        ========================= */
+
+        .word-list {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 12px;
+
+            width: 100%;
+
+            max-width: 500px;
+
+            margin-top: 30px;
+        }
+
+
+
+        /* =========================
+           詞彙按鈕
+        ========================= */
+
+        .word-item {
+
+            padding: 15px 8px;
+
+            border-radius: 15px;
+
+            background:
+                rgba(255, 255, 255, 0.1);
+
+            border:
+                1px solid
+                rgba(255, 255, 255, 0.2);
+
+            color:
+                #ffffff;
+
+            font-size:
+                16px;
+
+            cursor:
+                pointer;
+
+            text-align:
+                center;
+
+            transition:
+                all 0.3s ease;
+        }
+
+
+        .word-item:hover {
+
+            background:
+                rgba(255, 255, 255, 0.2);
+
+            transform:
+                translateY(-2px);
+        }
+
+
+
+        /* =========================
+           沒有搜尋結果
+        ========================= */
+
+        .no-result {
+
+            grid-column:
+                1 / -1;
+
+            width:
+                100%;
+
+            padding:
+                30px 10px;
+
+            color:
+                #ffffff;
+
+            font-size:
+                18px;
+
+            text-align:
+                center;
+        }
+
+
+
+        /* =========================
+           手機版
+        ========================= */
+
+        @media (max-width: 600px) {
+
+            .main-container {
+
+                width: 90%;
+
+                padding: 40px 20px;
+            }
+
+
+            h1 {
+
+                font-size: 1.8rem;
+            }
+
+
+            .search-box {
+
+                flex-wrap: wrap;
+            }
+
+
+            .search-box input {
+
+                width: 100%;
+
+                flex-basis: 100%;
+            }
+
+
+            .search-box button {
+
+                flex: 1;
+
+                width: auto;
+            }
+
+
+            .category-button {
+
+                flex: 1;
+            }
+
+
+            .category-menu {
+
+                right: 0;
+
+                width: 150px;
+
+                min-width: 150px;
+
+                box-sizing: border-box;
+            }
+
+
+            .category-item {
+
+                width: 100% !important;
+
+                min-width: 100% !important;
+
+                box-sizing: border-box;
+
+                padding: 8px 10px;
+
+                margin: 3px 0;
+            }
+
+
+            .word-list {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+
+                gap: 10px;
+            }
+
+
+            .word-item {
+
+                padding:
+                    14px 5px;
+
+                font-size:
+                    15px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         頂部導覽列
+    ========================= -->
+
+    <div id="header">
+
+        <a
+            href="index.html"
+            class="nav-link"
+        >
+            首頁
+        </a>
+
+    </div>
+
+
+
+    <!-- =========================
+         主要內容
+    ========================= -->
+
+    <div class="main-container">
+
+
+        <h1>
+            手語字典
+        </h1>
+
+
+        <p class="subtitle">
+            查詢台灣手語詞彙
+        </p>
+
+
+
+        <!-- =========================
+             搜尋區
+        ========================= -->
+
+        <div class="search-box">
+
+
+            <!-- 搜尋輸入框 -->
+
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="🔍 搜尋手語詞彙..."
+            >
+
+
+            <!-- 搜尋按鈕 -->
+
+            <button
+                type="button"
+                onclick="searchWords()"
+            >
+                搜尋
+            </button>
+
+
+
+            <!-- =========================
+                 分類按鈕
+            ========================= -->
+
+            <div class="category-wrapper">
+
+
+                <button
+                    type="button"
+                    class="category-button"
+                    onclick="toggleCategoryMenu()"
+                >
+                    分類 ▼
+                </button>
+
+
+
+                <!-- =========================
+                     分類選單
+                ========================= -->
+
+                <div
+                    class="category-menu"
+                    id="categoryMenu"
+                >
+
+
+                    <button
+                        type="button"
+                        class="category-item"
+                        onclick="selectCategory('人物／代詞')"
+                    >
+                        人物／代詞
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="category-item"
+                        onclick="selectCategory('禮貌用語')"
+                    >
+                        禮貌用語
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="category-item"
+                        onclick="selectCategory('肯定／否定')"
+                    >
+                        肯定／否定
+                    </button>
+
+
+                    <button
+                        type="button"
+                        class="category-item"
+                        onclick="selectCategory('其他詞彙')"
+                    >
+                        其他詞彙
+                    </button>
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =========================
+             分類標題
+        ========================= -->
+
+        <div
+            class="category-title"
+            id="categoryTitle"
+        ></div>
+
+
+
+        <!-- =========================
+             詞彙列表
+        ========================= -->
+
+        <div
+            class="word-list"
+            id="wordList"
+        ></div>
+
+
+    </div>
+
+
+
+    <script>
+
+
+        /* =========================================
+           詞彙分類
+        ========================================= */
+
+        const categories = {
+
+            "人物／代詞": [
+
+                "你",
+
+                "我",
+
+                "他",
+
+                "先生",
+
+                "小姐"
+
+            ],
+
+
+            "禮貌用語": [
+
+                "謝謝",
+
+                "不客氣",
+
+                "對不起",
+
+                "沒關係"
+
+            ],
+
+
+            "肯定／否定": [
+
+                "好",
+
+                "不好",
+
+                "可以",
+
+                "不可以",
+
+                "是",
+
+                "不是"
+
+            ],
+
+
+            "其他詞彙": [
+
+                "知道",
+
+                "高興",
+
+                "等一下",
+
+                "再見"
+
+            ]
+
+        };
+
+
+
+        /* =========================================
+           所有詞彙
+        ========================================= */
+
+        const words =
+            Object.values(categories).flat();
+
+
+
+        /* =========================================
+           YouTube / 網頁影片連結
+        ========================================= */
+
+        const videoLinks = {
+
+            "謝謝": [
+
+                "https://youtu.be/9xK6QsktGY4?si=zZbjo7TLjqLV_oXH&t=22",
+
+                "https://youtu.be/mLYKdD7rU2I?si=82NXMa_SVSaIZrUZ"
+
+            ],
+
+
+            "知道": [
+
+                "https://youtu.be/-idMNPzOa18?si=IxJ1XfYTe-E9tB_5&t=22",
+
+                "https://youtu.be/oFzSn7WR7-g?si=SHpnGeiC_ThrAcdR"
+
+            ],
+
+
+            "你": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=et5QewzbtmXyZSBw&t=17",
+
+                "https://youtu.be/5TMrRtjHA3c?si=7HmTzV8wmv9fjp5N&t=22"
+
+            ],
+
+
+            "我": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=05Kka86oAiMOMx9v&t=36",
+
+                "https://youtu.be/vr4roHtu4z4?si=SRvtlthcexwSgggV&t=22"
+
+            ],
+
+
+            "高興": [
+
+                "https://youtu.be/Bs1UViO0PB8?si=5NkRvk9KFOqsouCN&t=1",
+
+                "https://youtu.be/cB7GdpAklpo?si=eJFn6Egqdy5JfeRR&t=22"
+
+            ],
+
+
+            "對不起": [
+
+                "https://youtu.be/Z31EGgDwWzA?si=99qBonV8WHDu6eJ6&t=22",
+
+                "https://youtu.be/G7annnWsGqg?si=03Kw6SCnFbwqM72q"
+
+            ],
+
+
+            "沒關係": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=GdNEDWZVUcWngHjS&t=340",
+
+                "https://youtu.be/USXL9zY4dm8?si=2X3uWSNBYJNUEnzb"
+
+            ],
+
+
+            "可以": [
+
+                "https://youtu.be/yZB4pNR4VAI?si=74Ej4yuiX2pU7mbI",
+
+                "https://youtu.be/Jd9EoLi73A4?si=xfLhsy_1hhS5dB0D&t=22"
+
+            ],
+
+
+            "不可以": [
+
+                "https://youtu.be/hu_h9s3scf0?si=Otwe57aPtrBAAjl3&t=22",
+
+                "https://youtu.be/mPMGYAoq0ds?si=e44CbeRCZ--ELqZ0&t=210"
+
+            ],
+
+
+            "先生": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=XneppYmr06QizG73&t=123",
+
+                "https://youtu.be/zkz4kpqN-V0?si=4TY4s1h7ZtOyEwGQ"
+
+            ],
+
+
+            "小姐": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=dwnokfNQpJ94BevR&t=134",
+
+                "https://youtu.be/e9CE2cCfbGQ?si=HGGe9FzdjtUbXScX"
+
+            ],
+
+
+            "好": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=RkuRui8UEw8oQ8r4&t=170",
+
+                "https://youtube.com/shorts/2TrNJHxupSk?si=rgwilYCCItEf0fNJ&t=3"
+
+            ],
+
+
+            "不好": [
+
+                "https://youtu.be/phh-t59DMA4?si=qQjFJsYQntGstqFX&t=22",
+
+                "https://youtu.be/nE4kuhO0l3E?si=HfLQmFmRDlSD-Qqv&t=181"
+
+            ],
+
+
+            "不客氣": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=pdosafQwajuloP6b&t=320",
+
+                "https://youtu.be/Qw-qcHf0tWw?si=Vswd5G9vubcO_IF6"
+
+            ],
+
+
+            "他": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=pdosafQwajuloP6b&t=47",
+
+                "https://twtsl.ccu.edu.tw/word/972/%E4%BB%96_A"
+
+            ],
+
+
+            "再見": [
+
+                "https://youtu.be/O_-ERvE_2Jg?si=UPKAhhhq45qwufVk&t=22",
+
+                "https://twtsl.ccu.edu.tw/word/902/%E5%86%8D%E8%A6%8B"
+
+            ],
+
+
+            "等一下": [
+
+                "https://youtu.be/hC9Rnwfm5NU?si=6gzrnFIwUfOUxB-U",
+
+                "https://youtu.be/0w0DD1t7qfU?si=kjLb-wT-C3q5nuCW"
+
+            ],
+
+
+            "是": [
+
+                "https://youtu.be/nE4kuhO0l3E?si=KIsxlS_1t_EM1hC4&t=600",
+
+                "https://youtu.be/VF5yT1kEByk?si=5_VNGK2u7bEUYbpU&t=121"
+
+            ],
+
+
+            "不是": [
+
+                "https://youtu.be/EUAL7OG2krw?si=t5V769eLRhLmrjK1&t=22",
+
+                "https://twtsl.ccu.edu.tw/word/1454/%E4%B8%8D%E6%98%AF_A"
+
+            ]
+
+        };
+
+
+
+        /* =========================================
+           顯示詞彙
+        ========================================= */
+
+        function showWords(
+            wordArray,
+            title = ""
+        ) {
+
+            const wordList =
+                document.getElementById(
+                    "wordList"
+                );
+
+
+            const categoryTitle =
+                document.getElementById(
+                    "categoryTitle"
+                );
+
+
+            wordList.innerHTML = "";
+
+
+            categoryTitle.textContent =
+                title;
+
+
+            wordArray.forEach(
+                function(word) {
+
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    div.className =
+                        "word-item";
+
+
+                    div.textContent =
+                        word;
+
+
+                    div.onclick =
+                        function() {
+
+                            showVideoChoices(
+                                word
+                            );
+
+                        };
+
+
+                    wordList.appendChild(
+                        div
+                    );
+
+                }
+            );
+
+        }
+
+
+
+        /* =========================================
+           顯示影片選項
+        ========================================= */
+
+        function showVideoChoices(word) {
+
+            const wordList =
+                document.getElementById(
+                    "wordList"
+                );
+
+
+            const categoryTitle =
+                document.getElementById(
+                    "categoryTitle"
+                );
+
+
+            const links =
+                videoLinks[word] || [];
+
+
+            wordList.innerHTML = "";
+
+
+            categoryTitle.textContent =
+                word;
+
+
+            if (links.length === 0) {
+
+                wordList.innerHTML =
+                    `
+                    <div class="no-result">
+                        目前沒有影片
+                    </div>
+                    `;
+
+                return;
+            }
+
+
+            links.forEach(
+                function(url, index) {
+
+                    const div =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    div.className =
+                        "word-item";
+
+
+                    div.textContent =
+                        word + (index + 1);
+
+
+                    div.onclick =
+                        function() {
+
+                            window.open(
+                                url,
+                                "_blank"
+                            );
+
+                        };
+
+
+                    wordList.appendChild(
+                        div
+                    );
+
+                }
+            );
+
+        }
+
+
+
+        /* =========================================
+           開啟／關閉分類選單
+        ========================================= */
+
+        function toggleCategoryMenu() {
+
+            const menu =
+                document.getElementById(
+                    "categoryMenu"
+                );
+
+
+            menu.classList.toggle(
+                "show"
+            );
+
+        }
+
+
+
+        /* =========================================
+           選擇分類
+        ========================================= */
+
+        function selectCategory(category) {
+
+            const menu =
+                document.getElementById(
+                    "categoryMenu"
+                );
+
+
+            menu.classList.remove(
+                "show"
+            );
+
+
+            const categoryWords =
+                categories[category];
+
+
+            if (!categoryWords) {
+
+                return;
+
+            }
+
+
+            document.getElementById(
+                "searchInput"
+            ).value = "";
+
+
+            showWords(
+                categoryWords,
+                category
+            );
+
+        }
+
+
+
+        /* =========================================
+           搜尋詞彙
+        ========================================= */
+
+        function searchWords() {
+
+            const input =
+                document
+                    .getElementById(
+                        "searchInput"
+                    )
+                    .value
+                    .trim();
+
+
+            const wordList =
+                document.getElementById(
+                    "wordList"
+                );
+
+
+            const categoryTitle =
+                document.getElementById(
+                    "categoryTitle"
+                );
+
+
+            categoryTitle.textContent =
+                "";
+
+
+            if (input === "") {
+
+                wordList.innerHTML = "";
+
+                return;
+
+            }
+
+
+            const matchedWords =
+                words.filter(
+                    function(word) {
+
+                        return word === input;
+
+                    }
+                );
+
+
+            if (
+                matchedWords.length === 0
+            ) {
+
+                wordList.innerHTML =
+                    `
+                    <div class="no-result">
+                        找不到詞彙
+                    </div>
+                    `;
+
+                return;
+
+            }
+
+
+            showWords(
+                matchedWords,
+                ""
+            );
+
+        }
+
+
+
+        /* =========================================
+           Enter 搜尋
+        ========================================= */
+
+        document
+            .getElementById(
+                "searchInput"
+            )
+            .addEventListener(
+                "keydown",
+                function(event) {
+
+                    if (
+                        event.key === "Enter"
+                    ) {
+
+                        searchWords();
+
+                    }
+
+                }
+            );
+
+
+
+        /* =========================================
+           點擊其他地方關閉分類選單
+        ========================================= */
+
+        document.addEventListener(
+            "click",
+            function(event) {
+
+                const wrapper =
+                    document.querySelector(
+                        ".category-wrapper"
+                    );
+
+
+                const menu =
+                    document.getElementById(
+                        "categoryMenu"
+                    );
+
+
+                if (
+                    !wrapper.contains(
+                        event.target
+                    )
+                ) {
+
+                    menu.classList.remove(
+                        "show"
+                    );
+
+                }
+
+            }
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>

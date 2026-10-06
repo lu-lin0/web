@@ -1,0 +1,193 @@
+﻿@charset "utf-8"; 
+ 
+:root { 
+    --primary-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); 
+    --secondary-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); 
+    --white-color: #ffffff; 
+    --black-color: #000000; 
+} 
+ 
+body { 
+    font-family: Arial, sans-serif; 
+    background-color: #44758c; 
+    min-height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+} 
+ 
+ 
+/* 頂部導覽列 */ 
+#header { 
+    width: 100%; 
+    height: 70px; 
+    background: rgba(13, 15, 29, 0.75); 
+    backdrop-filter: blur(12px); 
+    border-bottom: 1px solid var(--black-color); 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 0 40px; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    z-index: 100; 
+} 
+ 
+ 
+/* 主內容區塊容器 */ 
+.main-container { 
+    margin-top: 130px; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    width: 90%; 
+    max-width: 600px; 
+    padding: 50px 30px; 
+    background: var(--black-color); 
+    border-radius: 36px; 
+    backdrop-filter: blur(10px); 
+    text-align: center; 
+} 
+ 
+ 
+h1 { 
+    font-size: 2.2rem; 
+    font-weight: 700; 
+    margin-bottom: 15px; 
+    letter-spacing: 1.5px; 
+    background: linear-gradient(to right, #ffffff, #d0d7de); 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+} 
+ 
+ 
+p.subtitle { 
+    color: var(--white-color); 
+    font-size: 1rem; 
+    margin-bottom: 40px; 
+} 
+ 
+ 
+/* 按鈕群組 */ 
+.action-group { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+    width: 100%; 
+    max-width: 320px; 
+} 
+ 
+ 
+/* 首頁按鈕樣式 */ 
+.nav-link { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-decoration: none; 
+    padding: 8px 20px; 
+    border-radius: 20px; 
+    color: var(--white-color); 
+    font-size: 1rem; 
+    font-weight: 600; 
+    background: rgba(255, 255, 255, 0.08); 
+    border: 1px solid var(--card-border); 
+    transition: all 0.3s ease; 
+} 
+ 
+.nav-link:hover { 
+    background: rgba(255, 255, 255, 0.18); 
+    transform: translateY(-2px); 
+} 
+ 
+ 
+/* 即時辨識按鈕 */ 
+.btn-primary { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-decoration: none; 
+    padding: 16px 32px; 
+    border-radius: 50px; 
+    color: #ffffff; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    letter-spacing: 1px; 
+    background: var(--primary-gradient); 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+} 
+ 
+.btn-primary:hover { 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 12px 30px rgba(0, 242, 254, 0.5); 
+} 
+ 
+ 
+/* 影片辨識按鈕 */ 
+.btn-glow { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-decoration: none; 
+    padding: 16px 32px; 
+    border-radius: 50px; 
+    color: #ffffff; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    letter-spacing: 1px; 
+    background: var(--secondary-gradient); 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+} 
+ 
+.btn-glow:hover { 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4); 
+} 
+ 
+ 
+/* 手語字典按鈕 */ 
+.btn-dictionary { 
+    display: inline-flex; 
+    align-items: center; 
+    justify-content: center; 
+    text-decoration: none; 
+    padding: 16px 32px; 
+    border-radius: 50px; 
+    color: #ffffff; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    letter-spacing: 1px; 
+ 
+    /* 淺紫色漸層 */ 
+    background: linear-gradient(
+    135deg,
+    rgba(181, 123, 234, 0.83) 0%,
+    rgba(142, 106, 216, 0.83) 100%
+);
+
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+} 
+ 
+.btn-dictionary:hover { 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 10px 25px rgba(181, 123, 234, 0.45); 
+} 
+ 
+ 
+/* 開始、停止、禁用按鈕 */ 
+.btn-start { 
+    background-color: #00cc66; 
+} 
+ 
+.btn-stop { 
+    background-color: #ff3333; 
+} 
+ 
+.btn:disabled { 
+    background-color: #555; 
+    cursor: not-allowed; 
+} 
+ 
+ 
+/* ------- footer ------- */

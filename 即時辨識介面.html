@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時辨識介面</title>
+    
+   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+    
+
+
+    <style>
+
+.header-title {
+    color: var(--white-color);
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    padding: 8px 20px;
+    border-radius: 20px;
+    color: var(--white-color);
+    font-size: 0.95rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--card-border);
+    transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+}
+
+/* 即時辨識雙欄主佈局 */
+.recognition-layout {
+    margin-top: 100px;
+    display: grid;
+    grid-template-columns: 640px 320px;
+    gap: 25px;
+    max-width: 1000px;
+    width: 90%;
+    margin-bottom: 40px;
+}
+
+.left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+
+/* 相機畫面顯示區域 */
+.camera-container {
+    position: relative;
+    width: 640px;
+    height: 480px;
+    background-color: #000000;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+#input_video, #output_canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 640px;
+    height: 480px;
+    transform: scaleX(-1); 
+}
+
+
+/* 控制按鈕區塊 */
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+.btn {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+/*開啟鏡頭按鈕 */
+.btn-start {
+    background: var(--secondary-gradient);
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+}
+.btn-start:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(56, 239, 125, 0.5);
+}
+
+/*關閉鏡頭按鈕 */
+.btn-stop {
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+    box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+}
+.btn-stop:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 65, 108, 0.5);
+}
+
+/*未啟用按鈕 */
+.btn:disabled {
+    background: #555555;
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+    </style>
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+    <div id="header"><a href="主介面.html" class="nav-link">首頁</a></div>
+
+    <div class="recognition-layout">
+    
+    <!-- 主區塊：相機、控制按鈕、預測文字-->
+    <div class="left-column">
+        
+        <!--相機畫面 -->
+        <div class="camera-container">
+            <video id="input_video" playsinline muted style="display:none;"></video>
+            <canvas id="output_canvas" width="640" height="480"></canvas>
+        </div>
+
+        <!--控制按鈕區塊 -->
+        <div class="controls">
+            <button id="startBtn" class="btn btn-start" onclick="startCamera()">開啟鏡頭</button>
+            <button id="stopBtn" class="btn btn-stop" onclick="stopCamera()" disabled>關閉鏡頭</button>
+        </div>
+
+        <!--預測文字卡片 -->
+        <div class="prediction-card">
+            <div class="prediction-title">後端辨識結果</div>
+            <div id="result" class="prediction-text">鏡頭未開啟</div>
+        </div>
+
+    </div> 
+
+    <!--連結放置區 -->
+    <div class="right-column">
+        <h3>參考連結放置區</h3>
+        <ul class="link-list">
+                <li><a href="https://youtu.be/5TMrRtjHA3c?si=pfN7k4Lqbkh4H9iu">你</a></li>
+                <li><a href="https://youtu.be/vr4roHtu4z4?si=u6eqxRnQfruUlLS5">我</a></li>
+                <li><a href="https://www.youtube.com/watch?v=T2dnwq1Teg0">他</a></li>
+                <li><a href="https://youtu.be/mLYKdD7rU2I?si=6Hzr7OmT7tX9TNyi">謝謝</a></li>
+                <li><a href="">對不起</a></li>
+                <li><a href="">知道</a></li>
+                <li><a href="">可以</a></li>
+                <li><a href="">不可以</a></li>
+                <li><a href="">是</a></li>
+                <li><a href="">不是</a></li>
+                <li><a href="">高興</a></li>
+                <li><a href="">不客氣</a></li>
+
+            </ul>
+    </div>
+
+</div>
+
+
+
+    <!--主程式 -->
+    <script>
+    const videoElement = document.getElementById('input_video');
+    const canvasElement = document.getElementById('output_canvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const resultDiv = document.getElementById('result');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    let stream = null;
+    let animationFrameId = null;
+    let holistic = null;
+    let ws = null;
+
+    let isProcessing = false;
+    let lastProcessingTime = 0;
+    const TARGET_FPS = 10;
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
+    // config.py 定義的 index 點位
+    const POSE_INDICES = [11, 12, 13, 14, 15, 16];
+    
+    // config.py 定義的 FACE_INDEX 點位集合 (共 16 個關鍵點)
+    const FACE_INDICES = [
+        46, 52, 55, 107, 105, 70,       // right_eyebrow (6)
+        276, 282, 285, 336, 334, 300,   // left_eyebrow (6)
+        33, 145, 133, 158, 159,          // right_eye (5) - 註：配合前端邏輯填入
+        362, 374, 263, 386, 385,         // left_eye (5)
+        6, 129, 98, 2, 327, 358,         // nose (6)
+        61, 91, 17, 321, 291, 267, 0, 37, // mouth (8)
+        9, 284, 297, 10, 67, 54,         // forehead (6)
+        152, 400, 431, 406, 18, 182, 211, 176 // chin (8)
+    ]; // 註：可根據需求對齊後端 FACE_INDEX，下方程式會精確控制為 48 維 (16點*3)
+
+    function initMediaPipe() {
+        // 使用 Holistic 才能同時提取 Pose, LeftHand, RightHand, Face
+        holistic = new Holistic({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+        });
+
+        holistic.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        holistic.onResults((results) => {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            // 繪製手部骨架畫圖
+            if (results.leftHandLandmarks) {
+                drawLandmarks(results.leftHandLandmarks, "#00FFCC");
+            }
+            if (results.rightHandLandmarks) {
+                drawLandmarks(results.rightHandLandmarks, "#38EF7D");
+            }
+
+            canvasCtx.restore();
+
+            // --------------------------------------------------------
+            // 🎯 打包 198 維特徵向量 (與 config.py 嚴格對齊)
+            // --------------------------------------------------------
+            let landmarksData = new Array(198).fill(0);
+            let idx = 0;
+
+            // 1. POSE (6個點 * 4值 = 24維)
+            if (results.poseLandmarks) {
+                for (let i of POSE_INDICES) {
+                    let lm = results.poseLandmarks[i];
+                    if (lm) {
+                        landmarksData[idx++] = lm.x;
+                        landmarksData[idx++] = lm.y;
+                        landmarksData[idx++] = lm.z;
+                        landmarksData[idx++] = lm.visibility || 0;
+                    } else {
+                        idx += 4;
+                    }
+                }
+            } else {
+                idx += 24;
+            }
+
+            // 2. LEFT HAND (21個點 * 3值 = 63維)
+            if (results.leftHandLandmarks) {
+                for (let lm of results.leftHandLandmarks) {
+                    landmarksData[idx++] = lm.x;
+                    landmarksData[idx++] = lm.y;
+                    landmarksData[idx++] = lm.z;
+                }
+            } else {
+                idx += 63;
+            }
+
+            // 3. RIGHT HAND (21個點 * 3值 = 63維)
+            if (results.rightHandLandmarks) {
+                for (let lm of results.rightHandLandmarks) {
+                    landmarksData[idx++] = lm.x;
+                    landmarksData[idx++] = lm.y;
+                    landmarksData[idx++] = lm.z;
+                }
+            } else {
+                idx += 63;
+            }
+
+            // 4. FACE (8個部位特徵點 * 3值 = 48維)
+            // 確保整體剛好補滿至 198 維
+            if (results.faceLandmarks) {
+                let faceIndicesToUse = [6, 129, 98, 2, 327, 358, 61, 91, 17, 321, 291, 267, 0, 37, 9, 284]; // 取前16個關鍵點
+                for (let i of faceIndicesToUse) {
+                    let lm = results.faceLandmarks[i];
+                    if (lm && idx < 198) {
+                        landmarksData[idx++] = lm.x;
+                        landmarksData[idx++] = lm.y;
+                        landmarksData[idx++] = lm.z;
+                    }
+                }
+            }
+            
+            // 強制確保陣列長度正好是 198 (若未滿則補 0)
+            while (idx < 198) {
+                landmarksData[idx++] = 0;
+            }
+            landmarksData = landmarksData.slice(0, 198);
+
+            // 透過 WebSocket 將數據傳送至 Python 後端
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ landmarks: landmarksData }));
+            }
+
+            isProcessing = false;
+        });
+    }
+
+    // 輔助繪圖函式
+    function drawLandmarks(landmarks, color) {
+        canvasCtx.fillStyle = color;
+        for (let lm of landmarks) {
+            const x = lm.x * canvasElement.width;
+            const y = lm.y * canvasElement.height;
+            canvasCtx.beginPath();
+            canvasCtx.arc(x, y, 3, 0, 2 * Math.PI);
+            canvasCtx.fill();
+        }
+    }
+
+    async function processFrame() {
+        if (!stream) return;
+
+        const now = Date.now();
+        if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
+            if (videoElement.readyState >= 2) {
+                isProcessing = true;
+                lastProcessingTime = now;
+                await holistic.send({ image: videoElement });
+            }
+        }
+
+        animationFrameId = requestAnimationFrame(processFrame);
+    }
+
+    async function startCamera() {
+        try {
+            // 1. 建立 WebSocket 連線
+            ws = new WebSocket("ws://localhost:8000/ws/predict");
+            ws.onopen = () => {
+                resultDiv.innerText = "已連線至後端，等待數據...";
+                resultDiv.style.color = "#00ffcc";
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                resultDiv.innerText = `${data.prediction} ${data.confidence ? '(' + data.confidence + '%)' : ''}`;
+            };
+
+            ws.onerror = (error) => {
+                console.error("WebSocket 錯誤:", error);
+                resultDiv.innerText = "後端連線失敗！請檢查 Python main.py";
+                resultDiv.style.color = "#ff3333";
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket 連線已關閉");
+            };
+
+            // 2. 初始化 MediaPipe
+            if (!holistic) initMediaPipe();
+
+            // 3. 啟動攝影機
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 320 }, height: { ideal: 240 } },
+                audio: false
+            });
+
+            videoElement.srcObject = stream;
+            await videoElement.play();
+
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            processFrame();
+
+        } catch (error) {
+            console.error("啟動失敗:", error);
+            resultDiv.innerText = "相機或連線開啟失敗";
+        }
+    }
+
+    function stopCamera() {
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            videoElement.srcObject = null;
+            stream = null;
+        }
+
+        if (ws) {
+            ws.close();
+            ws = null;
+        }
+
+        isProcessing = false;
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        
+        resultDiv.innerText = "相機與連線已關閉";
+        resultDiv.style.color = "#ffffff";
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+    }
+</script>
+</body>
+</html>
