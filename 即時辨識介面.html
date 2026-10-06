@@ -343,34 +343,27 @@
 
     async function startCamera() {
         try {
-            // 1. 建立 WebSocket 連線（加入 try-catch 容錯保護）
-            try {
-                ws = new WebSocket("ws://localhost:8000/ws/predict");
-                
-                ws.onopen = () => {
-                    resultDiv.innerText = "已連線至後端，等待數據...";
-                    resultDiv.style.color = "#00ffcc";
-                };
+            // 1. 建立 WebSocket 連線
+            ws = new WebSocket("ws://localhost:8000/ws/predict");
+            ws.onopen = () => {
+                resultDiv.innerText = "已連線至後端，等待數據...";
+                resultDiv.style.color = "#00ffcc";
+            };
 
-                ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    resultDiv.innerText = `${data.prediction} ${data.confidence ? '(' + data.confidence + '%)' : ''}`;
-                };
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                resultDiv.innerText = `${data.prediction} ${data.confidence ? '(' + data.confidence + '%)' : ''}`;
+            };
 
-                ws.onerror = (error) => {
-                    console.warn("WebSocket 錯誤:", error);
-                    resultDiv.innerText = "後端連線失敗！請檢查 Python main.py";
-                    resultDiv.style.color = "#ff3333";
-                };
+            ws.onerror = (error) => {
+                console.error("WebSocket 錯誤:", error);
+                resultDiv.innerText = "後端連線失敗！請檢查 Python main.py";
+                resultDiv.style.color = "#ff3333";
+            };
 
-                ws.onclose = () => {
-                    console.log("WebSocket 連線已關閉");
-                };
-            } catch (wsErr) {
-                console.warn("WebSocket 初始化失敗:", wsErr);
-                resultDiv.innerText = "後端服務未啟動（僅前端畫面展示）";
-                resultDiv.style.color = "#ffaa00";
-            }
+            ws.onclose = () => {
+                console.log("WebSocket 連線已關閉");
+            };
 
             // 2. 初始化 MediaPipe
             if (!holistic) initMediaPipe();
