@@ -411,6 +411,24 @@
 
 
         /* =========================
+           自製模型影片
+        ========================= */
+
+        .model-video {
+            grid-column: 1 / -1;
+            display: block;
+            width: 100%;
+            max-width: 480px;
+            max-height: 60vh;
+            height: auto;
+            margin: 10px auto;
+            border-radius: 12px;
+            background: #000;
+            object-fit: contain;
+        }
+
+
+        /* =========================
            手機版
         ========================= */
 
@@ -930,6 +948,17 @@
 
 
         /* =========================================
+           自製 3D 手語模型影片
+           請確認影片檔名與 GitHub Repository 中一致
+        ========================================= */
+        const modelVideos = {
+            "知道": "videos/know.mp4"
+            // 新增影片時，依照格式加上詞彙與路徑，例如：
+            // ,"知道": "videos/zhidao.mp4"
+        };
+
+
+        /* =========================================
            顯示詞彙
         ========================================= */
 
@@ -1001,79 +1030,48 @@
 
         function showVideoChoices(word) {
 
-            const wordList =
-                document.getElementById(
-                    "wordList"
-                );
+            const wordList = document.getElementById("wordList");
+            const categoryTitle = document.getElementById("categoryTitle");
 
-
-            const categoryTitle =
-                document.getElementById(
-                    "categoryTitle"
-                );
-
-
-            const links =
-                videoLinks[word] || [];
-
+            const links = videoLinks[word] || [];
+            const modelVideo = modelVideos[word];
 
             wordList.innerHTML = "";
+            categoryTitle.textContent = word;
 
+            // 優先在字典頁面內播放自己的 3D 模型影片
+            if (modelVideo) {
+                const video = document.createElement("video");
+                video.src = modelVideo;
+                video.controls = true;
+                video.playsInline = true;
+                video.preload = "metadata";
+                video.setAttribute("aria-label", word + "的 3D 手語模型影片");
+                video.className = "model-video";
 
-            categoryTitle.textContent =
-                word;
-
-
-            if (links.length === 0) {
-
-                wordList.innerHTML =
-                    `
-                    <div class="no-result">
-                        目前沒有影片
-                    </div>
-                    `;
-
-                return;
+                wordList.appendChild(video);
             }
 
+            // 保留原本的 YouTube／外部示範影片
+            links.forEach(function(url, index) {
+                const div = document.createElement("div");
+                div.className = "word-item";
+                div.textContent = "其他示範影片 " + (index + 1);
 
-            links.forEach(
-                function(url, index) {
+                div.onclick = function() {
+                    window.open(url, "_blank", "noopener,noreferrer");
+                };
 
-                    const div =
-                        document.createElement(
-                            "div"
-                        );
+                wordList.appendChild(div);
+            });
 
-
-                    div.className =
-                        "word-item";
-
-
-                    div.textContent =
-                        word + (index + 1);
-
-
-                    div.onclick =
-                        function() {
-
-                            window.open(
-                                url,
-                                "_blank"
-                            );
-
-                        };
-
-
-                    wordList.appendChild(
-                        div
-                    );
-
-                }
-            );
-
+            // 兩種來源都沒有影片時顯示提示
+            if (!modelVideo && links.length === 0) {
+                wordList.innerHTML = `
+                    <div class="no-result">目前沒有影片</div>
+                `;
+            }
         }
-
 
 
         /* =========================================
