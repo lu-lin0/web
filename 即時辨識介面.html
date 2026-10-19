@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>即時辨識介面</title>
     
-   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675469404/holistic.js"crossorigin="anonymous"></script>
     
 
 
@@ -224,7 +224,7 @@ function initMediaPipe() {
     if (holistic) return;
 
     holistic = new Holistic({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675469404/${file}`
     });
 
     holistic.setOptions({
@@ -367,18 +367,39 @@ function drawLandmarks(landmarks, color) {
 }
 
 async function processFrame() {
-    if (!stream) return;
+    if (!stream || !holistic) return;
 
-    const now = Date.now();
-    if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
-        if (videoElement.readyState >= 2) {
+    try {
+        const now = Date.now();
+
+        if (
+            !isProcessing &&
+            now - lastProcessingTime >= FRAME_INTERVAL &&
+            videoElement.readyState >= 2 &&
+            videoElement.videoWidth > 0
+        ) {
             isProcessing = true;
             lastProcessingTime = now;
-            await holistic.send({ image: videoElement });
+
+            try {
+                await holistic.send({
+                    image: videoElement
+                });
+            } catch (error) {
+                console.error(
+                    "MediaPipe 影格處理失敗：",
+                    error
+                );
+            } finally {
+                isProcessing = false;
+            }
+        }
+    } finally {
+        if (stream) {
+            animationFrameId =
+                requestAnimationFrame(processFrame);
         }
     }
-
-    animationFrameId = requestAnimationFrame(processFrame);
 }
 
 async function startCamera() {
@@ -435,28 +456,50 @@ async function startCamera() {
     }
 }
 
-function stopCamera() {
-    if (animationFrameId) {
+async function stopCamera() {
+    if (animationFrameId !== null) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
     }
 
     if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        videoElement.srcObject = null;
+        stream.getTracks().forEach(
+            track => track.stop()
+        );
         stream = null;
     }
 
+    videoElement.pause();
+    videoElement.srcObject = null;
+
     if (ws) {
+        ws.onclose = null;
         ws.close();
         ws = null;
     }
 
     isProcessing = false;
-    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-    
+
+    if (holistic) {
+        const oldHolistic = holistic;
+        holistic = null;
+
+        try {
+            await oldHolistic.close();
+        } catch (error) {
+            console.warn("關閉模型失敗：", error);
+        }
+    }
+
+    canvasCtx.clearRect(
+        0, 0,
+        canvasElement.width,
+        canvasElement.height
+    );
+
     resultDiv.innerText = "鏡頭未開啟";
     resultDiv.style.color = "#00f2fe";
+
     startBtn.disabled = false;
     stopBtn.disabled = true;
 }
