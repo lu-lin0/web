@@ -456,53 +456,41 @@ async function startCamera() {
     }
 }
 
-async function stopCamera() {
-    if (animationFrameId !== null) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-    }
-
-    if (stream) {
-        stream.getTracks().forEach(
-            track => track.stop()
-        );
-        stream = null;
-    }
-
-    videoElement.pause();
-    videoElement.srcObject = null;
-
-    if (ws) {
-        ws.onclose = null;
-        ws.close();
-        ws = null;
-    }
-
-    isProcessing = false;
-
-    if (holistic) {
-        const oldHolistic = holistic;
-        holistic = null;
-
-        try {
-            await oldHolistic.close();
-        } catch (error) {
-            console.warn("關閉模型失敗：", error);
-        }
-    }
-
-    canvasCtx.clearRect(
-        0, 0,
-        canvasElement.width,
-        canvasElement.height
-    );
-
-    resultDiv.innerText = "鏡頭未開啟";
-    resultDiv.style.color = "#00f2fe";
-
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
+function stopCamera() {
+if (animationFrameId !== null) {
+cancelAnimationFrame(animationFrameId);
+animationFrameId = null;
 }
+
+if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+    stream = null;
+}
+
+videoElement.pause();
+videoElement.srcObject = null;
+
+if (ws) {
+    ws.onclose = null;
+    ws.close();
+    ws = null;
+}
+
+isProcessing = false;
+
+canvasCtx.clearRect(
+    0, 0,
+    canvasElement.width,
+    canvasElement.height
+);
+
+resultDiv.innerText = "鏡頭未開啟";
+resultDiv.style.color = "#00f2fe";
+
+startBtn.disabled = false;
+stopBtn.disabled = true;
+}
+
     </script>
 </body>
 </html>
