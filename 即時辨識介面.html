@@ -5,54 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>即時辨識介面</title>
     
-   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675469404/holistic.js"crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
     
 
 
     <style>
-
-.header-title {
-    color: var(--white-color);
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.nav-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    padding: 8px 20px;
-    border-radius: 20px;
-    color: var(--white-color);
-    font-size: 0.95rem;
-    font-weight: 600;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid var(--card-border);
-    transition: all 0.3s ease;
-}
-
-.nav-link:hover {
-    background: rgba(255, 255, 255, 0.18);
-    transform: translateY(-2px);
-}
-
-/* 即時辨識雙欄主佈局 */
-.recognition-layout {
-    margin-top: 100px;
-    display: grid;
-    grid-template-columns: 640px 320px;
-    gap: 25px;
-    max-width: 1000px;
-    width: 90%;
-    margin-bottom: 40px;
-}
-
-.left-column {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
 
 
 /* 相機畫面顯示區域 */
@@ -158,20 +115,10 @@
 
     <!--連結放置區 -->
     <div class="right-column">
-        <h3>參考連結放置區</h3>
+        <h3>切換介面</h3>
         <ul class="link-list">
-                <li><a href="https://youtu.be/5TMrRtjHA3c?si=pfN7k4Lqbkh4H9iu">你</a></li>
-                <li><a href="https://youtu.be/vr4roHtu4z4?si=u6eqxRnQfruUlLS5">我</a></li>
-                <li><a href="https://www.youtube.com/watch?v=T2dnwq1Teg0">他</a></li>
-                <li><a href="https://youtu.be/mLYKdD7rU2I?si=6Hzr7OmT7tX9TNyi">謝謝</a></li>
-                <li><a href="">對不起</a></li>
-                <li><a href="">知道</a></li>
-                <li><a href="">可以</a></li>
-                <li><a href="">不可以</a></li>
-                <li><a href="">是</a></li>
-                <li><a href="">不是</a></li>
-                <li><a href="">高興</a></li>
-                <li><a href="">不客氣</a></li>
+                <li><a href="影片辨識介面.html" class="btn-glow">影片辨識</a></li>
+                <li><a href="手語字典.html" class="btn-dictionary">手語字典</a></li>
 
             </ul>
     </div>
@@ -182,7 +129,7 @@
 
     <!--主程式 -->
     <script>
-        const videoElement = document.getElementById('input_video');
+const videoElement = document.getElementById('input_video');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
 const resultDiv = document.getElementById('result');
@@ -196,7 +143,7 @@ let ws = null;
 
 let isProcessing = false;
 let lastProcessingTime = 0;
-const TARGET_FPS = 10;
+const TARGET_FPS = 20;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 // 1. POSE 關鍵點 (6個點 * 4值 = 24維)
@@ -224,134 +171,131 @@ function initMediaPipe() {
     if (holistic) return;
 
     holistic = new Holistic({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675469404/${file}`
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
     });
 
     holistic.setOptions({
-        modelComplexity: 1,
+        modelComplexity: 0,
         smoothLandmarks: true,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
+        minDetectionConfidence: 0.3, 
+        minTrackingConfidence: 0.3,  
+        refineLandmarks: true
     });
 
     holistic.onResults((results) => {
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+        try {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
-        // --------------------------------------------------------
-        // 🎨 畫布繪圖：雙手骨架 + config.py 定義的臉部關鍵點
-        // --------------------------------------------------------
-        
-        // 1. 繪製左手 (青色)
-        if (results.leftHandLandmarks) {
-            drawLandmarks(results.leftHandLandmarks, "#00FFCC");
-        }
-        // 2. 繪製右手 (黃綠色)
-        if (results.rightHandLandmarks) {
-            drawLandmarks(results.rightHandLandmarks, "#38EF7D");
-        }
+            const width = canvasElement.width;
+            const height = canvasElement.height;
 
-        // 3. 🎯 根據 config.py FACE_INDEX 繪製臉部特徵點 (亮藍色)
-        if (results.faceLandmarks) {
-            canvasCtx.fillStyle = "#00D2FF";
-            for (let i of ALL_CONFIG_FACE_INDICES) {
-                let lm = results.faceLandmarks[i];
-                if (lm) {
-                    const x = lm.x * canvasElement.width;
-                    const y = lm.y * canvasElement.height;
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(x, y, 2.5, 0, 2 * Math.PI);
-                    canvasCtx.fill();
+            // 1. 🎯 肩膀與手臂特徵點 (6點 - 亮橘色)
+            if (results.poseLandmarks) {
+                canvasCtx.fillStyle = "#FF9900";
+                for (let i = 0; i < POSE_INDICES.length; i++) {
+                    const lm = results.poseLandmarks[POSE_INDICES[i]];
+                    if (lm) {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(lm.x * width, lm.y * height, 4, 0, 2 * Math.PI);
+                        canvasCtx.fill();
+                    }
                 }
             }
-        }
 
-        canvasCtx.restore();
+            // 2. 🎯 左手掌特徵點 (21點 - 青色)
+            if (results.leftHandLandmarks && results.leftHandLandmarks.length > 0) {
+                canvasCtx.fillStyle = "#00FFCC";
+                for (let i = 0; i < results.leftHandLandmarks.length; i++) {
+                    const lm = results.leftHandLandmarks[i];
+                    if (lm) {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(lm.x * width, lm.y * height, 3.5, 0, 2 * Math.PI);
+                        canvasCtx.fill();
+                    }
+                }
+            }
 
-        // --------------------------------------------------------
-        // 🎯 特徵打包：嚴格輸出 198 維特徵向量
-        // --------------------------------------------------------
-        let landmarksData = new Array(198).fill(0);
-        let idx = 0;
+            // 3. 🎯 右手掌特徵點 (21點 - 黃綠色)
+            if (results.rightHandLandmarks && results.rightHandLandmarks.length > 0) {
+                canvasCtx.fillStyle = "#38EF7D";
+                for (let i = 0; i < results.rightHandLandmarks.length; i++) {
+                    const lm = results.rightHandLandmarks[i];
+                    if (lm) {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(lm.x * width, lm.y * height, 3.5, 0, 2 * Math.PI);
+                        canvasCtx.fill();
+                    }
+                }
+            }
 
-        // (1) POSE (24維: 6點 * 4值)
-        if (results.poseLandmarks) {
-            for (let i of POSE_INDICES) {
-                let lm = results.poseLandmarks[i];
-                if (lm) {
+            canvasCtx.restore();
+
+            // --------------------------------------------------------
+            // 198 維特徵打包 (對齊 FastAPI 後端模型)
+            // --------------------------------------------------------
+            let landmarksData = new Array(198).fill(0);
+            let idx = 0;
+
+            // POSE (24維)
+            if (results.poseLandmarks) {
+                for (let i = 0; i < POSE_INDICES.length; i++) {
+                    const lm = results.poseLandmarks[POSE_INDICES[i]];
+                    if (lm) {
+                        landmarksData[idx++] = lm.x;
+                        landmarksData[idx++] = lm.y;
+                        landmarksData[idx++] = lm.z;
+                        landmarksData[idx++] = lm.visibility || 0;
+                    } else { idx += 4; }
+                }
+            } else { idx += 24; }
+
+            // LEFT HAND (63維)
+            if (results.leftHandLandmarks) {
+                for (let i = 0; i < results.leftHandLandmarks.length; i++) {
+                    const lm = results.leftHandLandmarks[i];
                     landmarksData[idx++] = lm.x;
                     landmarksData[idx++] = lm.y;
                     landmarksData[idx++] = lm.z;
-                    landmarksData[idx++] = lm.visibility || 0;
-                } else {
-                    idx += 4;
                 }
-            }
-        } else {
-            idx += 24;
-        }
+            } else { idx += 63; }
 
-        // (2) LEFT HAND (63維: 21點 * 3值)
-        if (results.leftHandLandmarks) {
-            for (let lm of results.leftHandLandmarks) {
-                landmarksData[idx++] = lm.x;
-                landmarksData[idx++] = lm.y;
-                landmarksData[idx++] = lm.z;
-            }
-        } else {
-            idx += 63;
-        }
-
-        // (3) RIGHT HAND (63維: 21點 * 3值)
-        if (results.rightHandLandmarks) {
-            for (let lm of results.rightHandLandmarks) {
-                landmarksData[idx++] = lm.x;
-                landmarksData[idx++] = lm.y;
-                landmarksData[idx++] = lm.z;
-            }
-        } else {
-            idx += 63;
-        }
-
-        // (4) FACE (48維: 16點 * 3值，取自 config.py FACE_INDEX)
-        if (results.faceLandmarks) {
-            for (let i of FEATURE_FACE_INDICES) {
-                let lm = results.faceLandmarks[i];
-                if (lm) {
+            // RIGHT HAND (63維)
+            if (results.rightHandLandmarks) {
+                for (let i = 0; i < results.rightHandLandmarks.length; i++) {
+                    const lm = results.rightHandLandmarks[i];
                     landmarksData[idx++] = lm.x;
                     landmarksData[idx++] = lm.y;
                     landmarksData[idx++] = lm.z;
-                } else {
-                    idx += 3;
                 }
-            }
-        } else {
-            idx += 48;
-        }
+            } else { idx += 63; }
 
-        // 防禦性長度校正，確保輸出精確為 198 維
-        while (idx < 198) {
-            landmarksData[idx++] = 0;
-        }
-        landmarksData = landmarksData.slice(0, 198);
+            // FACE (48維 - 使用 FEATURE_FACE_INDICES 打包)
+            if (results.faceLandmarks) {
+                for (let i = 0; i < FEATURE_FACE_INDICES.length; i++) {
+                    const lm = results.faceLandmarks[FEATURE_FACE_INDICES[i]];
+                    if (lm) {
+                        landmarksData[idx++] = lm.x;
+                        landmarksData[idx++] = lm.y;
+                        landmarksData[idx++] = lm.z;
+                    } else { idx += 3; }
+                }
+            } else { idx += 48; }
 
-        // --------------------------------------------------------
-        // 攔截機制：必須有偵測到雙手手勢才發送至後端
-        // --------------------------------------------------------
-        const hasLeftHand = !!results.leftHandLandmarks;
-        const hasRightHand = !!results.rightHandLandmarks;
+            while (idx < 198) landmarksData[idx++] = 0;
+            landmarksData = landmarksData.slice(0, 198);
 
-        if (hasLeftHand || hasRightHand) {
+            // 💡 持續發送資料至 WebSocket，由後端統一判斷全 0 與預測結果
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ landmarks: landmarksData }));
             }
-        } else {
-            resultDiv.innerText = "等待手勢中...";
-            resultDiv.style.color = "#a0aec0";
-        }
 
-        isProcessing = false;
+        } catch (err) {
+            console.error("Canvas 繪圖異常:", err);
+        } finally {
+            isProcessing = false;
+        }
     });
 }
 
@@ -367,39 +311,18 @@ function drawLandmarks(landmarks, color) {
 }
 
 async function processFrame() {
-    if (!stream || !holistic) return;
+    if (!stream) return;
 
-    try {
-        const now = Date.now();
-
-        if (
-            !isProcessing &&
-            now - lastProcessingTime >= FRAME_INTERVAL &&
-            videoElement.readyState >= 2 &&
-            videoElement.videoWidth > 0
-        ) {
+    const now = Date.now();
+    if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
+        if (videoElement.readyState >= 2) {
             isProcessing = true;
             lastProcessingTime = now;
-
-            try {
-                await holistic.send({
-                    image: videoElement
-                });
-            } catch (error) {
-                console.error(
-                    "MediaPipe 影格處理失敗：",
-                    error
-                );
-            } finally {
-                isProcessing = false;
-            }
-        }
-    } finally {
-        if (stream) {
-            animationFrameId =
-                requestAnimationFrame(processFrame);
+            await holistic.send({ image: videoElement });
         }
     }
+
+    animationFrameId = requestAnimationFrame(processFrame);
 }
 
 async function startCamera() {
@@ -407,7 +330,7 @@ async function startCamera() {
         resultDiv.innerText = "正在連線後端...";
         resultDiv.style.color = "#00f2fe";
 
-        ws = new WebSocket("ws://localhost:8000/ws/predict");
+        ws = new WebSocket("wss://quotation-tiling-paver.ngrok-free.dev/ws/predict");
         
         ws.onopen = () => {
             resultDiv.innerText = "已連線至後端，等待手勢...";
@@ -457,40 +380,30 @@ async function startCamera() {
 }
 
 function stopCamera() {
-if (animationFrameId !== null) {
-cancelAnimationFrame(animationFrameId);
-animationFrameId = null;
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        videoElement.srcObject = null;
+        stream = null;
+    }
+
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+
+    isProcessing = false;
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    
+    resultDiv.innerText = "鏡頭未開啟";
+    resultDiv.style.color = "#00f2fe";
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
 }
-
-if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-}
-
-videoElement.pause();
-videoElement.srcObject = null;
-
-if (ws) {
-    ws.onclose = null;
-    ws.close();
-    ws = null;
-}
-
-isProcessing = false;
-
-canvasCtx.clearRect(
-    0, 0,
-    canvasElement.width,
-    canvasElement.height
-);
-
-resultDiv.innerText = "鏡頭未開啟";
-resultDiv.style.color = "#00f2fe";
-
-startBtn.disabled = false;
-stopBtn.disabled = true;
-}
-
-    </script>
+</script>
 </body>
 </html>

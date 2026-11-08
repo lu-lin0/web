@@ -5,27 +5,125 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>即時手語辨識與翻譯系統</title>
     <style>
+
+
+
+/* 左欄：主內容卡片 (調整寬度與相機相同) */
+.main-container {
+    width: 640px;
+    min-height: 480px; /* 保持與相機容器同高 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 30px;
+    background: rgba(13, 15, 29, 0.85);
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(10px);
+    text-align: center;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    letter-spacing: 1.5px;
+    background: linear-gradient(to right, #ffffff, #d0d7de);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+p.subtitle {
+    color: var(--white-color);
+    font-size: 1rem;
+    margin-bottom: 40px;
+}
+
+/* 按鈕群組 */
+.action-group {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    max-width: 320px;
+}
+
+.btn-primary, .btn-glow, .btn-dictionary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    padding: 16px 32px;
+    border-radius: 50px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.btn-primary {
+    background: var(--first-gradient);
+}
+
+.btn-primary:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 242, 254, 0.5);
+}
+
+.btn-glow {
+    background: var(--second-gradient);
+}
+
+.btn-glow:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(56, 239, 125, 0.4);
+}
+
+.btn-dictionary { 
+    background: var(--third-gradient);
+} 
+
+.btn-dictionary:hover { 
+    transform: translateY(-3px) scale(1.02); 
+    box-shadow: 0 10px 25px rgba(181, 123, 234, 0.45); 
+} 
+
+
+
     </style>
     <link href="style.css" rel="stylesheet" type="text/css">
 </head>
 <body>
 
-    /*頂部導覽列 */
+    <!-- 頂部導覽列 -->
     <div id="header">
         <a href="主介面.html" class="nav-link">首頁</a>
     </div>
 
-    /*主要內容區塊*/
-    <div class="main-container">
-        <h1>即時手語辨識與翻譯系統</h1>
-        <p class="subtitle">請選擇您要使用的模式</p>
-        
-        <div class="action-group">
-            <a href="即時辨識介面.html" class="btn-primary">即時辨識</a>
-            <a href="影片辨識介面.html" class="btn-glow">影片辨識</a>
-            <a href="手語字典.html" class="btn-dictionary">手語字典</a>
-
+    <!-- 主要內容區塊 -->
+    <div class="recognition-layout">       
+        <div class="main-container">
+            <h1>即時手語辨識與翻譯系統</h1>
+            <p class="subtitle">請選擇您要使用的辨識模式</p>
+            
+            <div class="action-group">
+                <a href="即時辨識介面.html" class="btn-primary">即時辨識</a>
+                <a href="影片辨識介面.html" class="btn-glow">影片辨識</a>
+                <a href="手語字典.html" class="btn-dictionary">手語字典</a>
+            </div>
         </div>
+
+        <!--連結放置區-->
+        <div class="right-column">
+            <h3>暫無</h3>
+            <ul class="link-list">
+                
+            </ul>
+        </div>
+
     </div>
 
 </body>
