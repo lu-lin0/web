@@ -315,16 +315,10 @@ async function processFrame() {
 
     const now = Date.now();
     if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
-        // 💡 增加 videoElement 寬高大於 0 的防呆，避免 WebGL 初始化失敗
-        if (videoElement.readyState >= 2 && videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+        if (videoElement.readyState >= 2) {
             isProcessing = true;
             lastProcessingTime = now;
-            try {
-                await holistic.send({ image: videoElement });
-            } catch (err) {
-                console.error("MediaPipe 傳送畫面異常:", err);
-                isProcessing = false;
-            }
+            await holistic.send({ image: videoElement });
         }
     }
 
