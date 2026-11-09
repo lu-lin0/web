@@ -40,6 +40,18 @@ print("模型載入成功！")
 print("模型輸入 shape:", model.input_shape)
 print("模型輸出 shape:", model.output_shape)
 
+# ==========================================
+# 根目錄健康檢查 Endpoint
+# ==========================================
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": f"即時手語辨識 API ({LANGUAGE}) 運行中",
+        "docs_url": "/docs",
+        "websocket_endpoint": "/ws/predict"
+    }
+
 
 # ==========================================
 # WebSocket 即時辨識 Endpoint
