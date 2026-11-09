@@ -6,7 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html # 💡 引入 Swagger UI
+from fastapi.openapi.docs import get_swagger_ui_html
 
 # 1. 載入完整的 config 設定
 from config import (
@@ -18,8 +18,10 @@ from config import (
     LANGUAGE
 )
 
+# 💡 整個檔案只需要宣告一次 FastAPI 實例
 app = FastAPI(title=f"即時手語辨識 API ({LANGUAGE})")
 
+# 💡 綁定 CORS 跨域設定
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,6 +30,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ==========================================
+# 根目錄健康檢查 Endpoint
+# ==========================================
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": f"即時手語辨識 API ({LANGUAGE}) 運行中",
+        "docs_url": "/docs",
+        "websocket_endpoint": "/ws/predict"
+    }
+
+# ==========================================
+# 手動指定 /docs 路由
+# ==========================================
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+    )
 
 # ==========================================
 # 載入模型 (根據 config 中的 MODEL_PATH)
@@ -41,16 +64,6 @@ print("模型載入成功！")
 print("模型輸入 shape:", model.input_shape)
 print("模型輸出 shape:", model.output_shape)
 
-# 建立 FastAPI 時確保沒有關閉文件
-app = FastAPI(title=f"即時手語辨識 API ({LANGUAGE})")
-
-# 💡 手動指定 /docs 路由
-@app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    return get_swagger_ui_html(
-        openapi_url=app.openapi_url,
-        title=app.title + " - Swagger UI",
-    )
 
 # ==========================================
 # WebSocket 即時辨識 Endpoint
@@ -117,7 +130,6 @@ async def websocket_endpoint(websocket: WebSocket):
             # ------------------------------------------------------
             # 2. 短影片 & 即時推論邏輯 (零填充 Zero-Padding)
             # ------------------------------------------------------
-            # 當影格達 10 幀以上（約 0.5 秒）即開始預測，未滿 30 幀自動補 0
             if len(sequence_buffer) >= 10:
                 padded_seq = list(sequence_buffer)
                 while len(padded_seq) < 30:
@@ -125,16 +137,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 input_data = np.expand_dims(np.array(padded_seq, dtype=np.float32), axis=0)
                 
-                # 💡 改用 direct call 替代 model.predict() 以提高執行效率
                 prediction = model(input_data, training=False).numpy()[0]
                 class_idx = int(np.argmax(prediction))
                 confidence = float(prediction[class_idx])
 
-                # 💡 修正變數名稱：使用 config 匯入的 gestures 變數
                 raw_label = gestures[class_idx] if class_idx < len(gestures) else "Unknown"
                 zh_label = TSL_GESTURES_TW.get(raw_label, raw_label)
 
-                # 回傳結果給前端
                 await websocket.send_json({
                     "prediction": zh_label,
                     "confidence": round(confidence * 100, 1)
