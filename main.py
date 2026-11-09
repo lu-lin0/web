@@ -6,6 +6,7 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html # 💡 引入 Swagger UI
 
 # 1. 載入完整的 config 設定
 from config import (
@@ -40,18 +41,16 @@ print("模型載入成功！")
 print("模型輸入 shape:", model.input_shape)
 print("模型輸出 shape:", model.output_shape)
 
-# ==========================================
-# 根目錄健康檢查 Endpoint
-# ==========================================
-@app.get("/")
-async def root():
-    return {
-        "status": "online",
-        "message": f"即時手語辨識 API ({LANGUAGE}) 運行中",
-        "docs_url": "/docs",
-        "websocket_endpoint": "/ws/predict"
-    }
+# 建立 FastAPI 時確保沒有關閉文件
+app = FastAPI(title=f"即時手語辨識 API ({LANGUAGE})")
 
+# 💡 手動指定 /docs 路由
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+    )
 
 # ==========================================
 # WebSocket 即時辨識 Endpoint
