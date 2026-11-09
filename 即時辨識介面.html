@@ -315,10 +315,16 @@ async function processFrame() {
 
     const now = Date.now();
     if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
-        if (videoElement.readyState >= 2) {
+        // 💡 增加 videoElement 寬高大於 0 的防呆，避免 WebGL 初始化失敗
+        if (videoElement.readyState >= 2 && videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
             isProcessing = true;
             lastProcessingTime = now;
-            await holistic.send({ image: videoElement });
+            try {
+                await holistic.send({ image: videoElement });
+            } catch (err) {
+                console.error("MediaPipe 傳送畫面異常:", err);
+                isProcessing = false;
+            }
         }
     }
 
@@ -330,7 +336,7 @@ async function startCamera() {
         resultDiv.innerText = "正在連線後端...";
         resultDiv.style.color = "#00f2fe";
 
-        ws = new WebSocket("wss://quotation-tiling-paver.ngrok-free.dev/ws/predict");
+        ws = new WebSocket("wss://sign-language-backend-qr50.onrender.com/ws/predict");
         
         ws.onopen = () => {
             resultDiv.innerText = "已連線至後端，等待手勢...";
