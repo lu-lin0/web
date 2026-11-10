@@ -1,3 +1,4 @@
+<script>
 const videoElement = document.getElementById('input_video');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
@@ -11,15 +12,13 @@ let holistic = null;
 let ws = null;
 
 let isProcessing = false;
-let isHolisticReady = false; // 💡 確保模型完全初始化完成的標記
+let isHolisticReady = false; 
 let lastProcessingTime = 0;
 const TARGET_FPS = 20;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
-// 1. POSE 關鍵點 (6個點 * 4值 = 24維)
 const POSE_INDICES = [11, 12, 13, 14, 15, 16];
 
-// 2. 對齊 config.py 的 FACE_INDEX 字典定義
 const FACE_INDEX_CONFIG = {
     "right_eyebrow": [46, 52, 55, 107, 105, 70],
     "left_eyebrow": [276, 282, 285, 336, 334, 300],
@@ -31,10 +30,7 @@ const FACE_INDEX_CONFIG = {
     "chin": [152, 400, 431, 406, 18, 182, 211, 176]
 };
 
-// 將 config.py 的 FACE_INDEX 展開成陣列清單
 const ALL_CONFIG_FACE_INDICES = Object.values(FACE_INDEX_CONFIG).flat();
-
-// 取前 16 個點填補至 198 維特徵中 (16點 * 3 = 48維)
 const FEATURE_FACE_INDICES = ALL_CONFIG_FACE_INDICES.slice(0, 16);
 
 async function initMediaPipe() {
@@ -61,7 +57,6 @@ async function initMediaPipe() {
             const width = canvasElement.width;
             const height = canvasElement.height;
 
-            // 1. 🎯 肩膀與手臂特徵點 (6點 - 亮橘色)
             if (results.poseLandmarks) {
                 canvasCtx.fillStyle = "#FF9900";
                 for (let i = 0; i < POSE_INDICES.length; i++) {
@@ -74,7 +69,6 @@ async function initMediaPipe() {
                 }
             }
 
-            // 2. 🎯 左手掌特徵點 (21點 - 青色)
             if (results.leftHandLandmarks && results.leftHandLandmarks.length > 0) {
                 canvasCtx.fillStyle = "#00FFCC";
                 for (let i = 0; i < results.leftHandLandmarks.length; i++) {
@@ -87,7 +81,6 @@ async function initMediaPipe() {
                 }
             }
 
-            // 3. 🎯 右手掌特徵點 (21點 - 黃綠色)
             if (results.rightHandLandmarks && results.rightHandLandmarks.length > 0) {
                 canvasCtx.fillStyle = "#38EF7D";
                 for (let i = 0; i < results.rightHandLandmarks.length; i++) {
@@ -102,13 +95,9 @@ async function initMediaPipe() {
 
             canvasCtx.restore();
 
-            // --------------------------------------------------------
-            // 198 維特徵打包 (對齊 FastAPI 後端模型)
-            // --------------------------------------------------------
             let landmarksData = new Array(198).fill(0);
             let idx = 0;
 
-            // POSE (24維)
             if (results.poseLandmarks) {
                 for (let i = 0; i < POSE_INDICES.length; i++) {
                     const lm = results.poseLandmarks[POSE_INDICES[i]];
@@ -121,7 +110,6 @@ async function initMediaPipe() {
                 }
             } else { idx += 24; }
 
-            // LEFT HAND (63維)
             if (results.leftHandLandmarks) {
                 for (let i = 0; i < results.leftHandLandmarks.length; i++) {
                     const lm = results.leftHandLandmarks[i];
@@ -131,7 +119,6 @@ async function initMediaPipe() {
                 }
             } else { idx += 63; }
 
-            // RIGHT HAND (63維)
             if (results.rightHandLandmarks) {
                 for (let i = 0; i < results.rightHandLandmarks.length; i++) {
                     const lm = results.rightHandLandmarks[i];
@@ -141,7 +128,6 @@ async function initMediaPipe() {
                 }
             } else { idx += 63; }
 
-            // FACE (48維 - 使用 FEATURE_FACE_INDICES 打包)
             if (results.faceLandmarks) {
                 for (let i = 0; i < FEATURE_FACE_INDICES.length; i++) {
                     const lm = results.faceLandmarks[FEATURE_FACE_INDICES[i]];
@@ -156,7 +142,6 @@ async function initMediaPipe() {
             while (idx < 198) landmarksData[idx++] = 0;
             landmarksData = landmarksData.slice(0, 198);
 
-            // 💡 持續發送資料至 WebSocket
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ landmarks: landmarksData }));
             }
@@ -168,7 +153,6 @@ async function initMediaPipe() {
         }
     });
 
-    // 💡 務必呼叫 initialize() 以防 loadGraph 崩潰
     await holistic.initialize();
     isHolisticReady = true;
 }
@@ -225,7 +209,6 @@ async function startCamera() {
             console.log("WebSocket 連線關閉");
         };
 
-        // 💡 優先初始化 MediaPipe 模型
         await initMediaPipe();
 
         stream = await navigator.mediaDevices.getUserMedia({
@@ -274,3 +257,4 @@ function stopCamera() {
     startBtn.disabled = false;
     stopBtn.disabled = true;
 }
+</script>
