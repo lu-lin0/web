@@ -1,4 +1,134 @@
-<script>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時辨識介面</title>
+    
+   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+    
+
+
+    <style>
+
+
+/* 相機畫面顯示區域 */
+.camera-container {
+    position: relative;
+    width: 640px;
+    height: 480px;
+    background-color: #000000;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+#input_video, #output_canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 640px;
+    height: 480px;
+    transform: scaleX(-1); 
+}
+
+
+/* 控制按鈕區塊 */
+.controls {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+.btn {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+/*開啟鏡頭按鈕 */
+.btn-start {
+    background: var(--secondary-gradient);
+    box-shadow: 0 4px 15px rgba(56, 239, 125, 0.3);
+}
+.btn-start:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(56, 239, 125, 0.5);
+}
+
+/*關閉鏡頭按鈕 */
+.btn-stop {
+    background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+    box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+}
+.btn-stop:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 65, 108, 0.5);
+}
+
+/*未啟用按鈕 */
+.btn:disabled {
+    background: #555555;
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+    </style>
+    <link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+
+    <div id="header">
+        <a href="主介面.html" class="nav-link">首頁</a>
+    </div>
+
+    <div class="recognition-layout">
+    
+    <!-- 主區塊：相機、控制按鈕、預測文字-->
+    <div class="left-column">
+        
+        <!--相機畫面 -->
+        <div class="camera-container">
+            <video id="input_video" playsinline muted style="display:none;"></video>
+            <canvas id="output_canvas" width="640" height="480"></canvas>
+        </div>
+
+        <!--控制按鈕區塊 -->
+        <div class="controls">
+            <button id="startBtn" class="btn btn-start" onclick="startCamera()">開啟鏡頭</button>
+            <button id="stopBtn" class="btn btn-stop" onclick="stopCamera()" disabled>關閉鏡頭</button>
+        </div>
+
+        <!--預測文字卡片 -->
+        <div class="prediction-card">
+            <div class="prediction-title">後端辨識結果</div>
+            <div id="result" class="prediction-text">鏡頭未開啟</div>
+        </div>
+
+    </div> 
+
+    <!--連結放置區 -->
+    <div class="right-column">
+        <h3>切換介面</h3>
+        <ul class="link-list">
+                <li><a href="影片辨識介面.html" class="btn-glow">影片辨識</a></li>
+                <li><a href="手語字典.html" class="btn-dictionary">手語字典</a></li>
+
+            </ul>
+    </div>
+
+</div>
+
+
+
+    <!--主程式 -->
+    <script>
 const videoElement = document.getElementById('input_video');
 const canvasElement = document.getElementById('output_canvas');
 const canvasCtx = canvasElement.getContext('2d');
@@ -12,13 +142,14 @@ let holistic = null;
 let ws = null;
 
 let isProcessing = false;
-let isHolisticReady = false; 
 let lastProcessingTime = 0;
 const TARGET_FPS = 20;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
+// 1. POSE 關鍵點 (6個點 * 4值 = 24維)
 const POSE_INDICES = [11, 12, 13, 14, 15, 16];
 
+// 2. 對齊 config.py 的 FACE_INDEX 字典定義
 const FACE_INDEX_CONFIG = {
     "right_eyebrow": [46, 52, 55, 107, 105, 70],
     "left_eyebrow": [276, 282, 285, 336, 334, 300],
@@ -30,14 +161,17 @@ const FACE_INDEX_CONFIG = {
     "chin": [152, 400, 431, 406, 18, 182, 211, 176]
 };
 
+// 將 config.py 的 FACE_INDEX 展開成陣列清單
 const ALL_CONFIG_FACE_INDICES = Object.values(FACE_INDEX_CONFIG).flat();
+
+// 取前 16 個點填補至 198 維特徵中 (16點 * 3 = 48維)
 const FEATURE_FACE_INDICES = ALL_CONFIG_FACE_INDICES.slice(0, 16);
 
-async function initMediaPipe() {
+function initMediaPipe() {
     if (holistic) return;
 
     holistic = new Holistic({
-        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.5.1675471629/${file}`
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
     });
 
     holistic.setOptions({
@@ -57,6 +191,7 @@ async function initMediaPipe() {
             const width = canvasElement.width;
             const height = canvasElement.height;
 
+            // 1. 🎯 肩膀與手臂特徵點 (6點 - 亮橘色)
             if (results.poseLandmarks) {
                 canvasCtx.fillStyle = "#FF9900";
                 for (let i = 0; i < POSE_INDICES.length; i++) {
@@ -69,6 +204,7 @@ async function initMediaPipe() {
                 }
             }
 
+            // 2. 🎯 左手掌特徵點 (21點 - 青色)
             if (results.leftHandLandmarks && results.leftHandLandmarks.length > 0) {
                 canvasCtx.fillStyle = "#00FFCC";
                 for (let i = 0; i < results.leftHandLandmarks.length; i++) {
@@ -81,6 +217,7 @@ async function initMediaPipe() {
                 }
             }
 
+            // 3. 🎯 右手掌特徵點 (21點 - 黃綠色)
             if (results.rightHandLandmarks && results.rightHandLandmarks.length > 0) {
                 canvasCtx.fillStyle = "#38EF7D";
                 for (let i = 0; i < results.rightHandLandmarks.length; i++) {
@@ -95,9 +232,13 @@ async function initMediaPipe() {
 
             canvasCtx.restore();
 
+            // --------------------------------------------------------
+            // 198 維特徵打包 (對齊 FastAPI 後端模型)
+            // --------------------------------------------------------
             let landmarksData = new Array(198).fill(0);
             let idx = 0;
 
+            // POSE (24維)
             if (results.poseLandmarks) {
                 for (let i = 0; i < POSE_INDICES.length; i++) {
                     const lm = results.poseLandmarks[POSE_INDICES[i]];
@@ -110,6 +251,7 @@ async function initMediaPipe() {
                 }
             } else { idx += 24; }
 
+            // LEFT HAND (63維)
             if (results.leftHandLandmarks) {
                 for (let i = 0; i < results.leftHandLandmarks.length; i++) {
                     const lm = results.leftHandLandmarks[i];
@@ -119,6 +261,7 @@ async function initMediaPipe() {
                 }
             } else { idx += 63; }
 
+            // RIGHT HAND (63維)
             if (results.rightHandLandmarks) {
                 for (let i = 0; i < results.rightHandLandmarks.length; i++) {
                     const lm = results.rightHandLandmarks[i];
@@ -128,6 +271,7 @@ async function initMediaPipe() {
                 }
             } else { idx += 63; }
 
+            // FACE (48維 - 使用 FEATURE_FACE_INDICES 打包)
             if (results.faceLandmarks) {
                 for (let i = 0; i < FEATURE_FACE_INDICES.length; i++) {
                     const lm = results.faceLandmarks[FEATURE_FACE_INDICES[i]];
@@ -142,6 +286,7 @@ async function initMediaPipe() {
             while (idx < 198) landmarksData[idx++] = 0;
             landmarksData = landmarksData.slice(0, 198);
 
+            // 💡 持續發送資料至 WebSocket，由後端統一判斷全 0 與預測結果
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ landmarks: landmarksData }));
             }
@@ -152,25 +297,28 @@ async function initMediaPipe() {
             isProcessing = false;
         }
     });
+}
 
-    await holistic.initialize();
-    isHolisticReady = true;
+function drawLandmarks(landmarks, color) {
+    canvasCtx.fillStyle = color;
+    for (let lm of landmarks) {
+        const x = lm.x * canvasElement.width;
+        const y = lm.y * canvasElement.height;
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, 3, 0, 2 * Math.PI);
+        canvasCtx.fill();
+    }
 }
 
 async function processFrame() {
-    if (!stream || !isHolisticReady) return;
+    if (!stream) return;
 
     const now = Date.now();
     if (!isProcessing && (now - lastProcessingTime >= FRAME_INTERVAL)) {
-        if (videoElement.readyState >= 2 && videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+        if (videoElement.readyState >= 2) {
             isProcessing = true;
             lastProcessingTime = now;
-            try {
-                await holistic.send({ image: videoElement });
-            } catch (err) {
-                console.error("MediaPipe 傳送畫面異常:", err);
-                isProcessing = false;
-            }
+            await holistic.send({ image: videoElement });
         }
     }
 
@@ -182,10 +330,10 @@ async function startCamera() {
         resultDiv.innerText = "正在連線後端...";
         resultDiv.style.color = "#00f2fe";
 
-        ws = new WebSocket("wss://sign-language-backend-qr50.onrender.com/ws/predict");
+        ws = new WebSocket("wss://sign-language-backend-qr5o.onrender.com/ws/predict");
         
         ws.onopen = () => {
-            resultDiv.innerText = "已連線至後端，初始化模型中...";
+            resultDiv.innerText = "已連線至後端，等待手勢...";
             resultDiv.style.color = "#00ffcc";
         };
 
@@ -201,7 +349,7 @@ async function startCamera() {
 
         ws.onerror = (error) => {
             console.error("WebSocket 錯誤:", error);
-            resultDiv.innerText = "後端連線失敗！請確認 Render 是否已甦醒";
+            resultDiv.innerText = "後端連線失敗！請檢查 Python main.py";
             resultDiv.style.color = "#ff3333";
         };
 
@@ -209,7 +357,7 @@ async function startCamera() {
             console.log("WebSocket 連線關閉");
         };
 
-        await initMediaPipe();
+        initMediaPipe();
 
         stream = await navigator.mediaDevices.getUserMedia({
             video: { width: { ideal: 640 }, height: { ideal: 480 } },
@@ -226,7 +374,7 @@ async function startCamera() {
 
     } catch (error) {
         console.error("啟動失敗:", error);
-        resultDiv.innerText = "相機開啟或模型初始化失敗";
+        resultDiv.innerText = "相機開啟失敗，請確認權限";
         resultDiv.style.color = "#ff3333";
     }
 }
@@ -249,7 +397,6 @@ function stopCamera() {
     }
 
     isProcessing = false;
-    isHolisticReady = false;
     canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
     
     resultDiv.innerText = "鏡頭未開啟";
@@ -258,3 +405,5 @@ function stopCamera() {
     stopBtn.disabled = true;
 }
 </script>
+</body>
+</html>
