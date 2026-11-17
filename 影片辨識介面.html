@@ -425,7 +425,8 @@
                 resultDiv.style.color = "#00f2fe";
 
                 // 1. 建立 WebSocket 連線
-                ws = new WebSocket("ws://localhost:8000/ws/predict");
+                ws = new WebSocket("wss://sign-language-backend-qr5o.onrender.com/ws/predict");
+        
                 
                 ws.onopen = () => {
                     resultDiv.innerText = "已連線後端，開始播放分析...";
