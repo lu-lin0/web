@@ -11,49 +11,7 @@
     <style>
 
 
-        .header-title {
-            color: var(--white-color);
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .nav-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            padding: 8px 20px;
-            border-radius: 20px;
-            color: var(--white-color);
-            font-size: 0.95rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--card-border);
-            transition: all 0.3s ease;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.18);
-            transform: translateY(-2px);
-        }
-
-        /* 主佈局 */
-        .recognition-layout {
-            margin-top: 100px;
-            display: grid;
-            grid-template-columns: 640px 320px;
-            gap: 25px;
-            max-width: 1000px;
-            width: 90%;
-            margin-bottom: 40px;
-            align-items: start;
-        }
-
-        .left-column {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+ 
 
         /* 檔案上傳區塊 */
         .upload-section {
@@ -208,6 +166,7 @@
 
         <!-- 右欄：選單與連結 -->
         <div class="right-column">
+            <h3>選擇影片</h3>
                 <!-- 影片選擇器 -->
             <div class="upload-section">
                 <label for="videoUpload" class="upload-label">📁 選擇手語影片 (MP4, WEBM)</label>
@@ -426,7 +385,6 @@
 
                 // 1. 建立 WebSocket 連線
                 ws = new WebSocket("wss://sign-language-backend-qr5o.onrender.com/ws/predict");
-        
                 
                 ws.onopen = () => {
                     resultDiv.innerText = "已連線後端，開始播放分析...";
@@ -468,27 +426,24 @@
             }
         }
 
-        function stopVideoRecognition() {
-            videoElement.pause();
+       function stopVideoRecognition() {
+    videoElement.pause();
 
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-            }
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
 
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
 
-            isProcessing = false;
-            resultDiv.innerText = "影片已暫停";
-            resultDiv.style.color = "#00f2fe";
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-        }
+    isProcessing = false;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+}
 
-        // 監聽影片原生播放 event
         videoElement.onplay = () => {
             if (!ws || ws.readyState !== WebSocket.OPEN) {
                 startVideoRecognition();
@@ -502,10 +457,19 @@
         };
 
         videoElement.onended = () => {
-            stopVideoRecognition();
-            resultDiv.innerText = "影片播放完畢";
-            resultDiv.style.color = "#38ef7d";
-        };
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ action: "flush" }));
+    }
+    
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+    
+    isProcessing = false;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+};
     </script>
 </body>
 </html>
