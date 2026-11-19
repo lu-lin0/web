@@ -292,7 +292,7 @@
 
 
         /* =========================
-           分類標題
+           分類標題／詞彙詳情標題列
         ========================= */
 
         .category-title {
@@ -312,6 +312,64 @@
             font-weight: bold;
 
             text-align: left;
+        }
+
+
+        .detail-header {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 12px;
+        }
+
+
+        .back-button {
+
+            padding: 8px 14px;
+
+            border-radius: 14px;
+
+            background: rgba(255, 255, 255, 0.14);
+
+            border: 1px solid rgba(255, 255, 255, 0.28);
+
+            color: #ffffff;
+
+            font-size: 14px;
+
+            font-weight: 600;
+
+            cursor: pointer;
+
+            white-space: nowrap;
+
+            transition: all 0.25s ease;
+        }
+
+
+        .back-button:hover {
+
+            background: rgba(255, 255, 255, 0.24);
+
+            transform: translateY(-1px);
+        }
+
+
+        .back-button:active {
+
+            transform: scale(0.97);
+        }
+
+
+        .detail-word-title {
+
+            color: #ffffff;
+
+            font-size: 22px;
+
+            font-weight: bold;
         }
 
 
@@ -425,101 +483,6 @@
             border-radius: 12px;
             background: #000;
             object-fit: contain;
-        }
-
-
-        /* =========================
-           手機版
-        ========================= */
-
-        @media (max-width: 600px) {
-
-            .main-container {
-
-                width: 90%;
-
-                padding: 40px 20px;
-            }
-
-
-            h1 {
-
-                font-size: 1.8rem;
-            }
-
-
-            .search-box {
-
-                flex-wrap: wrap;
-            }
-
-
-            .search-box input {
-
-                width: 100%;
-
-                flex-basis: 100%;
-            }
-
-
-            .search-box button {
-
-                flex: 1;
-
-                width: auto;
-            }
-
-
-            .category-button {
-
-                flex: 1;
-            }
-
-
-            .category-menu {
-
-                right: 0;
-
-                width: 150px;
-
-                min-width: 150px;
-
-                box-sizing: border-box;
-            }
-
-
-            .category-item {
-
-                width: 100% !important;
-
-                min-width: 100% !important;
-
-                box-sizing: border-box;
-
-                padding: 8px 10px;
-
-                margin: 3px 0;
-            }
-
-
-            .word-list {
-
-                grid-template-columns:
-                    repeat(2, 1fr);
-
-                gap: 10px;
-            }
-
-
-            .word-item {
-
-                padding:
-                    14px 5px;
-
-                font-size:
-                    15px;
-            }
-
         }
 
     </style>
@@ -770,6 +733,18 @@
 
 
         /* =========================================
+           記錄前一頁視圖狀態（用於返回）
+        ========================================= */
+
+        let lastView = {
+            type: null,          // "category" 或 "search"
+            category: "",        // 分類名稱
+            searchWords: []      // 搜尋結果陣列
+        };
+
+
+
+        /* =========================================
            YouTube / 網頁影片連結
         ========================================= */
 
@@ -962,28 +937,28 @@
         /* =========================================
            自製 3D 手語模型影片
         ========================================= */
-   	const modelVideos = {
-        "知道": "videos/know.mp4",
-        "我": "videos/I.mp4",
-        "你": "videos/you.mp4",
-        "高興": "videos/happy.mp4",
-        "先生": "videos/man.mp4",
-        "對不起": "videos/sorry.mp4",
-        "謝謝": "videos/it's ok.mp4",
-        "沒關係": "videos/can.mp4",
-        "可以": "videos/can.mp4",
-        "不可以": "videos/can't.mp4",
-        "小姐": "videos/woman.mp4",
-        "好": "videos/yes.mp4",
-        "不好": "videos/not good.mp4",
-        "不客氣": "videos/You're welcome.mp4",
-        "他": "videos/he.mp4",
-        "再見": "videos/bye.mp4",
-        "等一下": "videos/wait.mp4",
-        "是": "videos/yes.mp4",
-        "不是": "videos/no.mp4",
-        "生氣": "videos/angry.mp4"
-};
+        const modelVideos = {
+            "知道": "videos/know.mp4",
+            "我": "videos/I.mp4",
+            "你": "videos/you.mp4",
+            "高興": "videos/happy.mp4",
+            "先生": "videos/man.mp4",
+            "對不起": "videos/sorry.mp4",
+            "謝謝": "videos/it's ok.mp4",
+            "沒關係": "videos/can.mp4",
+            "可以": "videos/can.mp4",
+            "不可以": "videos/can't.mp4",
+            "小姐": "videos/woman.mp4",
+            "好": "videos/yes.mp4",
+            "不好": "videos/not good.mp4",
+            "不客氣": "videos/You're welcome.mp4",
+            "他": "videos/he.mp4",
+            "再見": "videos/bye.mp4",
+            "等一下": "videos/wait.mp4",
+            "是": "videos/yes.mp4",
+            "不是": "videos/no.mp4",
+            "生氣": "videos/angry.mp4"
+        };
 
 
         /* =========================================
@@ -1053,6 +1028,37 @@
 
 
         /* =========================================
+           返回上一頁（分類列表或搜尋結果）
+        ========================================= */
+
+        function goBackFromDetail() {
+
+            if (lastView.type === "category" && lastView.category) {
+
+                showWords(
+                    categories[lastView.category],
+                    lastView.category
+                );
+
+            } else if (lastView.type === "search") {
+
+                showWords(
+                    lastView.searchWords,
+                    ""
+                );
+
+            } else {
+
+                document.getElementById("categoryTitle").textContent = "";
+                document.getElementById("wordList").innerHTML = "";
+
+            }
+
+        }
+
+
+
+        /* =========================================
            顯示影片選項
         ========================================= */
 
@@ -1065,7 +1071,25 @@
             const modelVideo = modelVideos[word];
 
             wordList.innerHTML = "";
-            categoryTitle.textContent = word;
+            categoryTitle.innerHTML = "";
+
+            // 標題列：左側放「← 返回」按鈕，右側放詞彙名稱
+            const headerDiv = document.createElement("div");
+            headerDiv.className = "detail-header";
+
+            const backBtn = document.createElement("button");
+            backBtn.type = "button";
+            backBtn.className = "back-button";
+            backBtn.textContent = "← 返回";
+            backBtn.onclick = goBackFromDetail;
+
+            const wordSpan = document.createElement("span");
+            wordSpan.className = "detail-word-title";
+            wordSpan.textContent = word;
+
+            headerDiv.appendChild(backBtn);
+            headerDiv.appendChild(wordSpan);
+            categoryTitle.appendChild(headerDiv);
 
             // 優先在字典頁面內播放自己的 3D 模型影片
             if (modelVideo) {
@@ -1155,6 +1179,13 @@
             ).value = "";
 
 
+            lastView = {
+                type: "category",
+                category: category,
+                searchWords: []
+            };
+
+
             showWords(
                 categoryWords,
                 category
@@ -1197,6 +1228,12 @@
 
             if (input === "") {
 
+                lastView = {
+                    type: null,
+                    category: "",
+                    searchWords: []
+                };
+
                 wordList.innerHTML = "";
 
                 return;
@@ -1218,6 +1255,12 @@
                 matchedWords.length === 0
             ) {
 
+                lastView = {
+                    type: null,
+                    category: "",
+                    searchWords: []
+                };
+
                 wordList.innerHTML =
                     `
                     <div class="no-result">
@@ -1228,6 +1271,13 @@
                 return;
 
             }
+
+
+            lastView = {
+                type: "search",
+                category: "",
+                searchWords: matchedWords
+            };
 
 
             showWords(
